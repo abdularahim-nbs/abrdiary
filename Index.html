@@ -3,119 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbrDiary - Catatan Online</title>
+    <title>AbrDiary - Diary Sederhana</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; max-width: 600px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        textarea { width: 100%; height: 100px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; padding: 10px; box-sizing: border-box; }
-        input[type="text"] { width: 70%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 8px 15px; cursor: pointer; background: #2ecc71; color: white; border: none; border-radius: 4px; }
-        .tag-item { display: inline-block; background: #e0e0e0; padding: 2px 8px; border-radius: 12px; margin: 5px 5px 0 0; font-size: 12px; }
-        .tag-remove { margin-left: 5px; cursor: pointer; color: red; }
-        .diary-item { border-bottom: 1px solid #eee; padding: 15px 0; }
-        .diary-date { font-size: 11px; color: #888; }
-        .diary-tags { margin-top: 5px; }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        form { margin-bottom: 20px; }
+        input, textarea { width: 100%; margin-bottom: 10px; padding: 8px; }
+        button { padding: 10px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        .entry { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+        .tags { font-style: italic; color: gray; }
+        .delete-btn { background: #f44336; color: white; padding: 5px; cursor: pointer; }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js"></script>
 </head>
 <body>
-
-    <h2>📔 AbrDiary</h2>
-
-    <div class="card">
-        <textarea id="noteInput" placeholder="Tulis diarimu hari ini..."></textarea>
-        <div>
-            <input type="text" id="tagInput" placeholder="Tambah tag (tekan Enter)">
-            <button onclick="saveDiary()">Simpan Diari</button>
-        </div>
-        <div id="currentTags" style="margin-top: 10px;"></div>
-    </div>
-
-    <div id="diaryList">Loding catatan...</div>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <h1>AbrDiary</h1>
+    <form id="diaryForm">
+        <input type="text" id="title" placeholder="Judul Diary" required>
+        <textarea id="content" placeholder="Isi Diary" required></textarea>
+        <input type="text" id="tags" placeholder="Tag (pisah dengan koma, misal: senang,libur)">
+        <button type="submit">Simpan Diary</button>
+    </form>
+    <h2>Daftar Diary</h2>
+    <div id="diaryList"></div>
 
     <script>
-        // Masukkan konfigurasi Firebase kamu di sini
+        // Ganti dengan config Firebase milikmu
         const firebaseConfig = {
-            apiKey: "PASTE_API_KEY_KAMU",
-            authDomain: "abrdiary.firebaseapp.com",
-            databaseURL: "https://abrdiary-default-rtdb.firebaseio.com",
-            projectId: "abrdiary",
-            storageBucket: "abrdiary.appspot.com",
-            messagingSenderId: "XXXXX",
-            appId: "XXXXX"
-        };
-        
+  apiKey: "AIzaSyBSxNZ-L2fQfFoM6vWZnR2SkMoSTArQFhA",
+  authDomain: "abrdiary-cf4a5.firebaseapp.com",
+  databaseURL: "https://abrdiary-cf4a5-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "abrdiary-cf4a5",
+  storageBucket: "abrdiary-cf4a5.firebasestorage.app",
+  messagingSenderId: "478592228650",
+  appId: "1:478592228650:web:48c7e3ffe9ab6f96a41253"
+};
+
         // Inisialisasi Firebase
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        const database = firebase.database();
+        const diaryRef = database.ref('diaries'); // Nama node database: 'diaries'
 
-        let tagsArray = [];
-
-        // Logika Input Tag
-        const tagInput = document.getElementById('tagInput');
-        tagInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter' && this.value !== '') {
-                tagsArray.push(this.value);
-                this.value = '';
-                renderTags();
-            }
+        // Fungsi tambah diary
+        document.getElementById('diaryForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
+            diaryRef.push({ title, content, tags, timestamp: Date.now() });
+            document.getElementById('diaryForm').reset();
         });
 
-        function renderTags() {
-            const container = document.getElementById('currentTags');
-            container.innerHTML = tagsArray.map((t, i) => 
-                `<span class="tag-item">${t} <span class="tag-remove" onclick="removeTag(${i})">x</span></span>`
-            ).join('');
-        }
-
-        function removeTag(index) {
-            tagsArray.splice(index, 1);
-            renderTags();
-        }
-
-        // Simpan ke Firebase
-        function saveDiary() {
-            const note = document.getElementById('noteInput').value;
-            if (note === '') return alert('Isi dulu diarinya!');
-
-            db.ref('entries').push({
-                content: note,
-                tags: tagsArray,
-                timestamp: Date.now()
+        // Tampilkan list diary
+        diaryRef.on('value', (snapshot) => {
+            const diaryList = document.getElementById('diaryList');
+            diaryList.innerHTML = '';
+            snapshot.forEach((childSnapshot) => {
+                const data = childSnapshot.val();
+                const key = childSnapshot.key;
+                const entry = document.createElement('div');
+                entry.classList.add('entry');
+                entry.innerHTML = `
+                    <h3>${data.title}</h3>
+                    <p>${data.content}</p>
+                    <p class="tags">Tag: ${data.tags.join(', ')}</p>
+                    <button class="delete-btn" onclick="deleteEntry('${key}')">Hapus</button>
+                `;
+                diaryList.appendChild(entry);
             });
-
-            // Reset Form
-            document.getElementById('noteInput').value = '';
-            tagsArray = [];
-            renderTags();
-        }
-
-        // Ambil Data secara Realtime
-        db.ref('entries').on('value', (snapshot) => {
-            const data = snapshot.val();
-            const listContainer = document.getElementById('diaryList');
-            listContainer.innerHTML = '<h3>Catatan Saya:</h3>';
-
-            if (data) {
-                Object.keys(data).reverse().forEach(key => {
-                    const entry = data[key];
-                    const date = new Date(entry.timestamp).toLocaleString();
-                    const tagsHtml = entry.tags ? entry.tags.map(t => `<span class="tag-item">${t}</span>`).join('') : '';
-                    
-                    listContainer.innerHTML += `
-                        <div class="card diary-item">
-                            <div class="diary-date">${date}</div>
-                            <div style="white-space: pre-wrap;">${entry.content}</div>
-                            <div class="diary-tags">${tagsHtml}</div>
-                        </div>
-                    `;
-                });
-            } else {
-                listContainer.innerHTML += '<p>Belum ada catatan.</p>';
-            }
         });
+
+        // Fungsi hapus entry
+        function deleteEntry(key) {
+            diaryRef.child(key).remove();
+        }
     </script>
 </body>
 </html>
