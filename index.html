@@ -3,84 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbrDiary - Diary Sederhana</title>
+    <title>AbrDiary - Diary Pribadi</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            max-width: 800px; 
-            margin: 0 auto; 
-            padding: 20px; 
-            background-color: #f9f9f9;
-        }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; }
         h1 { text-align: center; color: #333; }
-        form { 
-            background: white; 
-            padding: 20px; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-            margin-bottom: 30px;
-        }
-        input, textarea { 
-            width: 100%; 
-            margin-bottom: 15px; 
-            padding: 10px; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            box-sizing: border-box;
-        }
+        #authSection { text-align: center; margin: 50px 0; }
+        #googleBtn { background: #4285F4; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        #googleBtn:hover { background: #3367D6; }
+        #userInfo { margin: 20px 0; font-weight: bold; }
+        #logoutBtn { background: #f44336; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+        form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        input, textarea { width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         textarea { height: 150px; resize: vertical; }
-        button { 
-            padding: 12px 20px; 
-            background: #4CAF50; 
-            color: white; 
-            border: none; 
-            border-radius: 4px; 
-            cursor: pointer; 
-            font-size: 16px;
-        }
+        button { padding: 12px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
         button:hover { background: #45a049; }
-        .entry { 
-            background: white; 
-            padding: 15px; 
-            margin-bottom: 15px; 
-            border-radius: 8px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .entry h3 { margin: 0 0 10px 0; color: #333; }
-        .entry p { margin: 10px 0; }
+        .entry { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
+        .entry h3 { margin: 0 0 10px 0; }
         .tags { font-style: italic; color: #666; margin-bottom: 10px; }
-        .delete-btn { 
-            background: #f44336; 
-            color: white; 
-            padding: 6px 12px; 
-            border: none; 
-            border-radius: 4px; 
-            cursor: pointer; 
-            font-size: 14px;
-        }
-        .delete-btn:hover { background: #d32f2f; }
+        .delete-btn { background: #f44336; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; }
         .timestamp { font-size: 12px; color: #999; }
+        .hidden { display: none; }
     </style>
 
-    <!-- Firebase SDK (versi terbaru) -->
+    <!-- Firebase SDK compat (masih pakai versi lama biar mudah) -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 </head>
 <body>
     <h1>AbrDiary</h1>
-    
-    <form id="diaryForm">
-        <input type="text" id="title" placeholder="Judul Diary" required>
-        <textarea id="content" placeholder="Tulis isi diary kamu di sini..." required></textarea>
-        <input type="text" id="tags" placeholder="Tag (pisahkan dengan koma, contoh: senang, libur, keluarga)">
-        <button type="submit">Simpan Diary</button>
-    </form>
 
-    <h2>Daftar Diary</h2>
-    <div id="diaryList"></div>
+    <div id="authSection">
+        <p id="welcomeText">Selamat datang! Login dulu yuk biar diary-nya aman dan pribadi.</p>
+        <div id="userInfo" class="hidden"></div>
+        <button id="googleBtn">Login dengan Google</button>
+        <button id="logoutBtn" class="hidden">Logout</button>
+    </div>
+
+    <div id="mainApp" class="hidden">
+        <form id="diaryForm">
+            <input type="text" id="title" placeholder="Judul Diary" required>
+            <textarea id="content" placeholder="Tulis isi diary kamu di sini..." required></textarea>
+            <input type="text" id="tags" placeholder="Tag (pisah koma, contoh: senang, libur)">
+            <button type="submit">Simpan Diary</button>
+        </form>
+
+        <h2>Daftar Diary</h2>
+        <div id="diaryList"></div>
+    </div>
 
     <script>
-        // Config Firebase milikmu (sudah saya masukkan)
+        // Config Firebase kamu
         const firebaseConfig = {
             apiKey: "AIzaSyBSxNZ-L2fQfFoM6vWZnR2SkMoSTArQFhA",
             authDomain: "abrdiary-cf4a5.firebaseapp.com",
@@ -91,72 +64,104 @@
             appId: "1:478592228650:web:48c7e3ffe9ab6f96a41253"
         };
 
-        // Inisialisasi Firebase
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const database = firebase.database();
         const diaryRef = database.ref('diaries');
 
-        // Simpan diary baru
+        // Elemen HTML
+        const authSection = document.getElementById('authSection');
+        const mainApp = document.getElementById('mainApp');
+        const googleBtn = document.getElementById('googleBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userInfo = document.getElementById('userInfo');
+        const welcomeText = document.getElementById('welcomeText');
+
+        // Login Google
+        googleBtn.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider);
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        // Cek status login
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Sudah login
+                welcomeText.classList.add('hidden');
+                googleBtn.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                mainApp.classList.remove('hidden');
+                userInfo.innerHTML = `Halo, ${user.displayName || user.email}!`;
+                loadDiaries(); // Load data
+            } else {
+                // Belum login
+                authSection.querySelectorAll(':not(#welcomeText)').forEach(el => el.classList.add('hidden'));
+                welcomeText.classList.remove('hidden');
+                googleBtn.classList.remove('hidden');
+                mainApp.classList.add('hidden');
+                document.getElementById('diaryList').innerHTML = '';
+            }
+        });
+
+        // Simpan diary
         document.getElementById('diaryForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            
             const title = document.getElementById('title').value;
             const content = document.getElementById('content').value;
             const tagsInput = document.getElementById('tags').value;
-            const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+            const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [];
 
             diaryRef.push({
-                title: title,
-                content: content,
-                tags: tags,
-                timestamp: Date.now()
+                title,
+                content,
+                tags,
+                timestamp: Date.now(),
+                userId: auth.currentUser.uid // Simpan uid biar lebih aman nanti
             });
 
-            // Reset form
             document.getElementById('diaryForm').reset();
-            alert('Diary berhasil disimpan!');
+            alert('Diary tersimpan!');
         });
 
-        // Tampilkan semua diary (real-time)
-        diaryRef.orderByChild('timestamp').on('value', (snapshot) => {
-            const diaryList = document.getElementById('diaryList');
-            diaryList.innerHTML = '';
+        // Load dan tampilkan diary (real-time)
+        function loadDiaries() {
+            diaryRef.orderByChild('timestamp').on('value', (snapshot) => {
+                const diaryList = document.getElementById('diaryList');
+                diaryList.innerHTML = '';
 
-            if (!snapshot.exists()) {
-                diaryList.innerHTML = '<p>Belum ada diary. Tulis yang pertama yuk!</p>';
-                return;
-            }
+                if (!snapshot.exists()) {
+                    diaryList.innerHTML = '<p>Belum ada diary. Tulis yang pertama!</p>';
+                    return;
+                }
 
-            // Urutkan dari terbaru ke terlama
-            const entries = [];
-            snapshot.forEach((child) => {
-                entries.push({
-                    key: child.key,
-                    data: child.val()
+                const entries = [];
+                snapshot.forEach((child) => entries.push({ key: child.key, data: child.val() }));
+                entries.reverse().forEach((entry) => {
+                    const data = entry.data;
+                    const div = document.createElement('div');
+                    div.className = 'entry';
+                    const date = new Date(data.timestamp).toLocaleString('id-ID');
+                    div.innerHTML = `
+                        <h3>${data.title}</h3>
+                        <div class="timestamp">${date}</div>
+                        <p>${data.content.replace(/\n/g, '<br>')}</p>
+                        ${data.tags.length ? `<p class="tags">Tag: ${data.tags.join(', ')}</p>` : ''}
+                        <button class="delete-btn" onclick="deleteEntry('${entry.key}')">Hapus</button>
+                    `;
+                    diaryList.appendChild(div);
                 });
             });
+        }
 
-            entries.reverse().forEach((entry) => {
-                const data = entry.data;
-                const div = document.createElement('div');
-                div.className = 'entry';
-                
-                const date = new Date(data.timestamp).toLocaleString('id-ID');
-                
-                div.innerHTML = `
-                    <h3>${data.title}</h3>
-                    <div class="timestamp">${date}</div>
-                    <p>${data.content.replace(/\n/g, '<br>')}</p>
-                    ${data.tags.length > 0 ? `<p class="tags">Tag: ${data.tags.join(', ')}</p>` : ''}
-                    <button class="delete-btn" onclick="deleteEntry('${entry.key}')">Hapus</button>
-                `;
-                diaryList.appendChild(div);
-            });
-        });
-
-        // Fungsi hapus
+        // Hapus
         function deleteEntry(key) {
-            if (confirm('Yakin ingin menghapus diary ini?')) {
+            if (confirm('Yakin hapus diary ini?')) {
                 diaryRef.child(key).remove();
             }
         }
