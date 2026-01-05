@@ -31,7 +31,7 @@ body{
 }
 h1{text-align:center;margin-bottom:6px;}
 .subtitle{text-align:center;color:var(--secondary);margin-bottom:20px;}
-label{ font-size:13px; font-weight:600; color:#374151; }
+label{ font-size:13px; font-weight:600; }
 input, textarea, select{
     width:100%;
     padding:10px 12px;
@@ -39,33 +39,28 @@ input, textarea, select{
     margin-bottom:14px;
     border-radius:8px;
     border:1px solid var(--border);
-    font-size:14px;
 }
 textarea{ height:120px; }
-button{
+.btn-primary{
+    background:var(--primary);
+    color:white;
     border:none;
-    cursor:pointer;
-    font-size:13px;
-    border-radius:999px;
     padding:8px 14px;
+    border-radius:999px;
+    cursor:pointer;
 }
-.btn-primary{ background:var(--primary); color:white; }
 .tag-btn{
-    display:inline-block;
     background:#e5f0ff;
     color:#1d4ed8;
     padding:6px 12px;
     border-radius:999px;
     font-size:12px;
     margin:4px;
+    display:inline-block;
     cursor:pointer;
 }
-.tag-selected{ background:#1d4ed8; color:white; }
-.filter-bar{
-    display:flex;
-    gap:10px;
-    margin-bottom:12px;
-}
+.tag-selected{ background:#1d4ed8;color:white; }
+.filter-bar{ display:flex; gap:10px; margin-bottom:12px; }
 #diaryList{
     max-height:320px;
     overflow-y:auto;
@@ -75,44 +70,30 @@ button{
 }
 .entry{
     position:relative;
-    padding:12px;
-    border-radius:10px;
     border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px;
     margin-bottom:10px;
     background:#fafafa;
 }
-.entry-date{ font-size:12px; font-weight:600; color:#475569; }
-.entry-preview{ margin-top:6px; font-size:13px; }
+.entry-date{ font-size:12px;font-weight:600;color:#475569; }
+.entry-preview{ font-size:13px;margin-top:6px; }
 .delete-x{
-    position:absolute;
-    top:8px;
-    right:10px;
-    font-size:16px;
-    font-weight:bold;
-    color:#94a3b8;
-    cursor:pointer;
+    position:absolute;top:8px;right:10px;
+    font-size:16px;cursor:pointer;color:#94a3b8;
 }
 .delete-x:hover{ color:#ef4444; }
 
-/* LOGIN */
 #loginScreen{
-    position:fixed;
-    inset:0;
+    position:fixed;inset:0;
     background:var(--bg-main);
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    display:flex;align-items:center;justify-content:center;
     z-index:999;
 }
-.login-box{
-    width:100%;
-    max-width:360px;
-}
+.login-box{ max-width:360px;width:100%; }
 
-/* RESPONSIVE HP */
-@media (max-width:600px){
+@media(max-width:600px){
     body{ padding:14px; }
-    .card{ padding:16px; }
     .filter-bar{ flex-direction:column; }
 }
 </style>
@@ -125,15 +106,13 @@ button{
 
 <!-- LOGIN -->
 <div id="loginScreen">
-    <div class="card login-box">
-        <h1>🔐 ABRdiary</h1>
-        <div class="subtitle">Masukkan password</div>
-        <input type="password" id="passwordInput" placeholder="Password">
-        <button class="btn-primary" style="width:100%" onclick="checkLogin()">Masuk</button>
-    </div>
+  <div class="card login-box">
+    <h1>🔐 ABRdiary</h1>
+    <input type="password" id="passwordInput" placeholder="Password">
+    <button class="btn-primary" style="width:100%" onclick="checkLogin()">Masuk</button>
+  </div>
 </div>
 
-<!-- APP -->
 <div class="container" id="app" style="display:none">
 
 <div class="card">
@@ -142,6 +121,9 @@ button{
 
 <label>Tanggal</label>
 <input type="date" id="diaryDate">
+
+<label>Jam</label>
+<input type="time" id="diaryTime">
 
 <label>Tag (wajib, satu)</label>
 <div id="tagList"></div>
@@ -157,31 +139,25 @@ button{
 
 <div class="card">
 <h2>📚 Daftar Diary</h2>
-
 <div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="🔍 Cari diary..." onkeyup="loadDiary()">
-    <select id="filterTag" onchange="loadDiary()">
-        <option value="">Semua Tag</option>
-    </select>
+  <input type="text" id="searchInput" placeholder="🔍 Cari..." onkeyup="loadDiary()">
+  <select id="filterTag" onchange="loadDiary()">
+    <option value="">Semua Tag</option>
+  </select>
 </div>
-
 <div id="diaryList"></div>
 </div>
 
 </div>
 
 <script>
-/* LOGIN */
 function checkLogin(){
-    if(passwordInput.value==="12354"){
-        loginScreen.style.display="none";
-        app.style.display="block";
-    }else{
-        alert("Password salah");
-    }
+  if(passwordInput.value==="12354"){
+    loginScreen.style.display="none";
+    app.style.display="block";
+  } else alert("Password salah");
 }
 
-/* FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyB8jqDndij0mLi4zMqukKWRiEt4r6rh-D0",
   authDomain: "abrdiary-4c946.firebaseapp.com",
@@ -194,96 +170,89 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-/* TAG */
 function loadTags(){
-    tagList.innerHTML="";
-    filterTag.innerHTML='<option value="">Semua Tag</option>';
-    db.ref("tags").once("value").then(s=>{
-        const tags=s.val()||{};
-        Object.keys(tags).forEach(t=>{
-            let b=document.createElement("span");
-            b.className="tag-btn";
-            b.innerText=t;
-            b.onclick=()=>selectTag(t);
-            tagList.appendChild(b);
+  tagList.innerHTML="";
+  filterTag.innerHTML='<option value="">Semua Tag</option>';
+  db.ref("tags").once("value").then(s=>{
+    const tags=s.val()||{};
+    Object.keys(tags).forEach(t=>{
+      let b=document.createElement("span");
+      b.className="tag-btn";
+      b.innerText=t;
+      b.onclick=()=>selectTag(t);
+      tagList.appendChild(b);
 
-            let o=document.createElement("option");
-            o.value=t;o.innerText=t;
-            filterTag.appendChild(o);
-        });
-        let plus=document.createElement("span");
-        plus.className="tag-btn";
-        plus.innerText="+";
-        plus.onclick=()=>{
-            let t=prompt("Nama tag");
-            if(!t)return;
-            db.ref("tags/"+t).set(true).then(loadTags);
-        };
-        tagList.appendChild(plus);
+      let o=document.createElement("option");
+      o.value=t;o.innerText=t;
+      filterTag.appendChild(o);
     });
+    let plus=document.createElement("span");
+    plus.className="tag-btn";
+    plus.innerText="+";
+    plus.onclick=()=>{
+      let t=prompt("Nama tag");
+      if(!t)return;
+      db.ref("tags/"+t).set(true).then(loadTags);
+    };
+    tagList.appendChild(plus);
+  });
 }
 
 function selectTag(t){
-    selectedTag.innerHTML="";
-    let s=document.createElement("span");
-    s.className="tag-btn tag-selected";
-    s.innerText=t;
-    s.onclick=()=>selectedTag.innerHTML="";
-    selectedTag.appendChild(s);
+  selectedTag.innerHTML="";
+  let s=document.createElement("span");
+  s.className="tag-btn tag-selected";
+  s.innerText=t;
+  selectedTag.appendChild(s);
 }
 
-/* DIARY */
 function saveDiary(){
-    if(!diaryDate.value||!diaryText.value||!selectedTag.innerText){
-        alert("Tanggal, isi, dan tag wajib diisi");
-        return;
-    }
-    db.ref("diaries").push({
-        date:diaryDate.value,
-        text:diaryText.value,
-        tag:selectedTag.innerText
-    }).then(()=>{
-        diaryText.value="";
-        selectedTag.innerHTML="";
-        loadDiary();
-    });
+  if(!diaryDate.value||!diaryTime.value||!diaryText.value||!selectedTag.innerText){
+    alert("Tanggal, jam, isi, dan tag wajib diisi");
+    return;
+  }
+  db.ref("diaries").push({
+    date:diaryDate.value,
+    time:diaryTime.value,
+    text:diaryText.value,
+    tag:selectedTag.innerText
+  }).then(()=>{
+    diaryText.value="";
+    selectedTag.innerHTML="";
+    loadDiary();
+  });
 }
 
 function loadDiary(){
-    diaryList.innerHTML="";
-    let q=searchInput.value.toLowerCase();
-    let f=filterTag.value;
-
-    db.ref("diaries").once("value").then(s=>{
-        const data=s.val()||{};
-        let arr=Object.keys(data).map(k=>({key:k,...data[k]}));
-        arr.sort((a,b)=>b.date.localeCompare(a.date));
-
-        arr.forEach(x=>{
-            let sText=(x.date+x.text+x.tag).toLowerCase();
-            if(q && !sText.includes(q))return;
-            if(f && x.tag!==f)return;
-
-            let p=x.text.length>70?x.text.slice(0,70)+"…":x.text;
-            let e=document.createElement("div");
-            e.className="entry";
-            e.innerHTML=`
-              <span class="delete-x" onclick="deleteDiary('${x.key}')">×</span>
-              <div class="entry-date">${x.date} • ${x.tag}</div>
-              <div class="entry-preview">${p}</div>`;
-            diaryList.appendChild(e);
-        });
+  diaryList.innerHTML="";
+  let q=searchInput.value.toLowerCase();
+  let f=filterTag.value;
+  db.ref("diaries").once("value").then(s=>{
+    const d=s.val()||{};
+    let arr=Object.keys(d).map(k=>({key:k,...d[k]}));
+    arr.sort((a,b)=>(b.date+" "+b.time).localeCompare(a.date+" "+a.time));
+    arr.forEach(x=>{
+      if(q && !(x.text+x.tag).toLowerCase().includes(q))return;
+      if(f && x.tag!==f)return;
+      let p=x.text.length>70?x.text.slice(0,70)+"…":x.text;
+      diaryList.innerHTML+=`
+        <div class="entry">
+          <span class="delete-x" onclick="deleteDiary('${x.key}')">×</span>
+          <div class="entry-date">${x.date} ${x.time} • ${x.tag}</div>
+          <div class="entry-preview">${p}</div>
+        </div>`;
     });
+  });
 }
 
 function deleteDiary(k){
-    if(confirm("Yakin ingin menghapus diary ini?")){
-        db.ref("diaries/"+k).remove().then(loadDiary);
-    }
+  if(confirm("Yakin ingin menghapus diary ini?")){
+    db.ref("diaries/"+k).remove().then(loadDiary);
+  }
 }
 
-/* INIT */
 diaryDate.valueAsDate=new Date();
+diaryTime.value=new Date().toTimeString().slice(0,5);
 loadTags();
 loadDiary();
 </script>
