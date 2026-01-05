@@ -94,65 +94,51 @@ button{
 }
 .delete-x:hover{ color:#ef4444; }
 
-/* ========================= */
-/* ===== RESPONSIVE HP ===== */
-/* ========================= */
-@media (max-width: 600px){
-    body{
-        padding:14px;
-    }
-    .card{
-        padding:16px;
-        border-radius:12px;
-    }
-    h1{
-        font-size:20px;
-    }
-    .subtitle{
-        font-size:12px;
-    }
-    label{
-        font-size:12px;
-    }
-    input, textarea, select{
-        font-size:15px;
-        padding:12px;
-    }
-    textarea{
-        height:140px;
-    }
-    .filter-bar{
-        flex-direction:column;
-    }
-    #diaryList{
-        max-height:260px;
-    }
-    .entry-preview{
-        font-size:14px;
-    }
-    .delete-x{
-        font-size:18px;
-        top:6px;
-        right:8px;
-    }
-    .tag-btn{
-        font-size:13px;
-        padding:8px 14px;
-    }
+/* LOGIN */
+#loginScreen{
+    position:fixed;
+    inset:0;
+    background:var(--bg-main);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:999;
+}
+.login-box{
+    width:100%;
+    max-width:360px;
+}
+
+/* RESPONSIVE HP */
+@media (max-width:600px){
+    body{ padding:14px; }
+    .card{ padding:16px; }
+    .filter-bar{ flex-direction:column; }
 }
 </style>
 
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 
 <body>
-<div class="container">
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+    <div class="card login-box">
+        <h1>🔐 ABRdiary</h1>
+        <div class="subtitle">Masukkan password</div>
+        <input type="password" id="passwordInput" placeholder="Password">
+        <button class="btn-primary" style="width:100%" onclick="checkLogin()">Masuk</button>
+    </div>
+</div>
+
+<!-- APP -->
+<div class="container" id="app" style="display:none">
 
 <div class="card">
 <h1>📘 ABRdiary</h1>
-<div class="subtitle">Diary Online • nyaman di HP & Desktop</div>
+<div class="subtitle">Diary Online Abdul Rahim</div>
 
 <label>Tanggal</label>
 <input type="date" id="diaryDate">
@@ -185,6 +171,18 @@ button{
 </div>
 
 <script>
+/* LOGIN */
+function checkLogin(){
+    const pass=document.getElementById("passwordInput").value;
+    if(pass==="12354"){
+        document.getElementById("loginScreen").style.display="none";
+        document.getElementById("app").style.display="block";
+    }else{
+        alert("Password salah");
+    }
+}
+
+/* FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyB8jqDndij0mLi4zMqukKWRiEt4r6rh-D0",
   authDomain: "abrdiary-4c946.firebaseapp.com",
@@ -195,7 +193,7 @@ const firebaseConfig = {
   appId: "1:1016043740286:web:08a3caeb2dcdf374038c2f"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db=firebase.database();
 
 function loadTags(){
     tagList.innerHTML="";
@@ -282,5 +280,7 @@ diaryDate.valueAsDate=new Date();
 loadTags();
 loadDiary();
 </script>
+
 </body>
 </html>
+
