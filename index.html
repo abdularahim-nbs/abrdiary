@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>ABRdiary v.1 Online</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 :root{
@@ -60,7 +61,11 @@ button{
     cursor:pointer;
 }
 .tag-selected{ background:#1d4ed8; color:white; }
-.filter-bar{ display:flex; gap:10px; margin-bottom:12px; }
+.filter-bar{
+    display:flex;
+    gap:10px;
+    margin-bottom:12px;
+}
 #diaryList{
     max-height:320px;
     overflow-y:auto;
@@ -88,6 +93,53 @@ button{
     cursor:pointer;
 }
 .delete-x:hover{ color:#ef4444; }
+
+/* ========================= */
+/* ===== RESPONSIVE HP ===== */
+/* ========================= */
+@media (max-width: 600px){
+    body{
+        padding:14px;
+    }
+    .card{
+        padding:16px;
+        border-radius:12px;
+    }
+    h1{
+        font-size:20px;
+    }
+    .subtitle{
+        font-size:12px;
+    }
+    label{
+        font-size:12px;
+    }
+    input, textarea, select{
+        font-size:15px;
+        padding:12px;
+    }
+    textarea{
+        height:140px;
+    }
+    .filter-bar{
+        flex-direction:column;
+    }
+    #diaryList{
+        max-height:260px;
+    }
+    .entry-preview{
+        font-size:14px;
+    }
+    .delete-x{
+        font-size:18px;
+        top:6px;
+        right:8px;
+    }
+    .tag-btn{
+        font-size:13px;
+        padding:8px 14px;
+    }
+}
 </style>
 
 <!-- Firebase SDK -->
@@ -100,7 +152,7 @@ button{
 
 <div class="card">
 <h1>📘 ABRdiary</h1>
-<div class="subtitle">Diary Online • tersimpan di semua perangkat</div>
+<div class="subtitle">Diary Online • nyaman di HP & Desktop</div>
 
 <label>Tanggal</label>
 <input type="date" id="diaryDate">
@@ -133,7 +185,6 @@ button{
 </div>
 
 <script>
-/* === FIREBASE CONFIG (PUNYA BAPAK) === */
 const firebaseConfig = {
   apiKey: "AIzaSyB8jqDndij0mLi4zMqukKWRiEt4r6rh-D0",
   authDomain: "abrdiary-4c946.firebaseapp.com",
@@ -143,11 +194,9 @@ const firebaseConfig = {
   messagingSenderId: "1016043740286",
   appId: "1:1016043740286:web:08a3caeb2dcdf374038c2f"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* === TAG === */
 function loadTags(){
     tagList.innerHTML="";
     filterTag.innerHTML='<option value="">Semua Tag</option>';
@@ -164,7 +213,6 @@ function loadTags(){
             o.value=t;o.innerText=t;
             filterTag.appendChild(o);
         });
-
         let plus=document.createElement("span");
         plus.className="tag-btn";
         plus.innerText="+";
@@ -186,7 +234,6 @@ function selectTag(t){
     selectedTag.appendChild(s);
 }
 
-/* === DIARY === */
 function saveDiary(){
     if(!diaryDate.value||!diaryText.value||!selectedTag.innerText){
         alert("Tanggal, isi, dan tag wajib diisi");
@@ -207,14 +254,12 @@ function loadDiary(){
     diaryList.innerHTML="";
     let q=searchInput.value.toLowerCase();
     let f=filterTag.value;
-
     db.ref("diaries").once("value").then(s=>{
         const d=s.val()||{};
         Object.entries(d).forEach(([k,x])=>{
             let sText=(x.date+x.text+x.tag).toLowerCase();
             if(q && !sText.includes(q))return;
             if(f && x.tag!==f)return;
-
             let p=x.text.length>70?x.text.slice(0,70)+"…":x.text;
             let e=document.createElement("div");
             e.className="entry";
