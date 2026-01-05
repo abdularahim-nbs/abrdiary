@@ -1,170 +1,241 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AbrDiary - Diary Pribadi</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; }
-        h1 { text-align: center; color: #333; }
-        #authSection { text-align: center; margin: 50px 0; }
-        #googleBtn { background: #4285F4; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        #googleBtn:hover { background: #3367D6; }
-        #userInfo { margin: 20px 0; font-weight: bold; }
-        #logoutBtn { background: #f44336; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
-        form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
-        input, textarea { width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        textarea { height: 150px; resize: vertical; }
-        button { padding: 12px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #45a049; }
-        .entry { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
-        .entry h3 { margin: 0 0 10px 0; }
-        .tags { font-style: italic; color: #666; margin-bottom: 10px; }
-        .delete-btn { background: #f44336; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; }
-        .timestamp { font-size: 12px; color: #999; }
-        .hidden { display: none; }
-    </style>
+<meta charset="UTF-8">
+<title>ABRdiary v.1 Online</title>
 
-    <!-- Firebase SDK compat (masih pakai versi lama biar mudah) -->
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<style>
+:root{
+    --bg-main:#f4f6f8;
+    --bg-card:#ffffff;
+    --primary:#2563eb;
+    --secondary:#64748b;
+    --border:#e5e7eb;
+}
+*{ box-sizing:border-box; }
+body{
+    margin:0;
+    padding:24px;
+    font-family:"Segoe UI", Arial, sans-serif;
+    background:var(--bg-main);
+    color:#1f2937;
+}
+.container{ max-width:920px; margin:auto; }
+.card{
+    background:var(--bg-card);
+    border-radius:14px;
+    padding:22px;
+    box-shadow:0 8px 20px rgba(0,0,0,.05);
+    margin-bottom:20px;
+}
+h1{text-align:center;margin-bottom:6px;}
+.subtitle{text-align:center;color:var(--secondary);margin-bottom:20px;}
+label{ font-size:13px; font-weight:600; color:#374151; }
+input, textarea, select{
+    width:100%;
+    padding:10px 12px;
+    margin-top:6px;
+    margin-bottom:14px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    font-size:14px;
+}
+textarea{ height:120px; }
+button{
+    border:none;
+    cursor:pointer;
+    font-size:13px;
+    border-radius:999px;
+    padding:8px 14px;
+}
+.btn-primary{ background:var(--primary); color:white; }
+.tag-btn{
+    display:inline-block;
+    background:#e5f0ff;
+    color:#1d4ed8;
+    padding:6px 12px;
+    border-radius:999px;
+    font-size:12px;
+    margin:4px;
+    cursor:pointer;
+}
+.tag-selected{ background:#1d4ed8; color:white; }
+.filter-bar{ display:flex; gap:10px; margin-bottom:12px; }
+#diaryList{
+    max-height:320px;
+    overflow-y:auto;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px;
+}
+.entry{
+    position:relative;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    margin-bottom:10px;
+    background:#fafafa;
+}
+.entry-date{ font-size:12px; font-weight:600; color:#475569; }
+.entry-preview{ margin-top:6px; font-size:13px; }
+.delete-x{
+    position:absolute;
+    top:8px;
+    right:10px;
+    font-size:16px;
+    font-weight:bold;
+    color:#94a3b8;
+    cursor:pointer;
+}
+.delete-x:hover{ color:#ef4444; }
+</style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
+
 <body>
-    <h1>AbrDiary</h1>
+<div class="container">
 
-    <div id="authSection">
-        <p id="welcomeText">Selamat datang! Login dulu yuk biar diary-nya aman dan pribadi.</p>
-        <div id="userInfo" class="hidden"></div>
-        <button id="googleBtn">Login dengan Google</button>
-        <button id="logoutBtn" class="hidden">Logout</button>
-    </div>
+<div class="card">
+<h1>📘 ABRdiary</h1>
+<div class="subtitle">Diary Online • tersimpan di semua perangkat</div>
 
-    <div id="mainApp" class="hidden">
-        <form id="diaryForm">
-            <input type="text" id="title" placeholder="Judul Diary" required>
-            <textarea id="content" placeholder="Tulis isi diary kamu di sini..." required></textarea>
-            <input type="text" id="tags" placeholder="Tag (pisah koma, contoh: senang, libur)">
-            <button type="submit">Simpan Diary</button>
-        </form>
+<label>Tanggal</label>
+<input type="date" id="diaryDate">
 
-        <h2>Daftar Diary</h2>
-        <div id="diaryList"></div>
-    </div>
+<label>Tag (wajib, satu)</label>
+<div id="tagList"></div>
 
-    <script>
-        // Config Firebase kamu
-        const firebaseConfig = {
-            apiKey: "AIzaSyBSxNZ-L2fQfFoM6vWZnR2SkMoSTArQFhA",
-            authDomain: "abrdiary-cf4a5.firebaseapp.com",
-            databaseURL: "https://abrdiary-cf4a5-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "abrdiary-cf4a5",
-            storageBucket: "abrdiary-cf4a5.firebasestorage.app",
-            messagingSenderId: "478592228650",
-            appId: "1:478592228650:web:48c7e3ffe9ab6f96a41253"
+<label>Tag Terpilih</label>
+<div id="selectedTag"></div>
+
+<label>Isi Diary</label>
+<textarea id="diaryText"></textarea>
+
+<button class="btn-primary" onclick="saveDiary()">Simpan Diary</button>
+</div>
+
+<div class="card">
+<h2>📚 Daftar Diary</h2>
+
+<div class="filter-bar">
+    <input type="text" id="searchInput" placeholder="🔍 Cari diary..." onkeyup="loadDiary()">
+    <select id="filterTag" onchange="loadDiary()">
+        <option value="">Semua Tag</option>
+    </select>
+</div>
+
+<div id="diaryList"></div>
+</div>
+
+</div>
+
+<script>
+/* === FIREBASE CONFIG (PUNYA BAPAK) === */
+const firebaseConfig = {
+  apiKey: "AIzaSyB8jqDndij0mLi4zMqukKWRiEt4r6rh-D0",
+  authDomain: "abrdiary-4c946.firebaseapp.com",
+  databaseURL: "https://abrdiary-4c946-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "abrdiary-4c946",
+  storageBucket: "abrdiary-4c946.firebasestorage.app",
+  messagingSenderId: "1016043740286",
+  appId: "1:1016043740286:web:08a3caeb2dcdf374038c2f"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* === TAG === */
+function loadTags(){
+    tagList.innerHTML="";
+    filterTag.innerHTML='<option value="">Semua Tag</option>';
+    db.ref("tags").once("value").then(s=>{
+        const tags=s.val()||{};
+        Object.keys(tags).forEach(t=>{
+            let b=document.createElement("span");
+            b.className="tag-btn";
+            b.innerText=t;
+            b.onclick=()=>selectTag(t);
+            tagList.appendChild(b);
+
+            let o=document.createElement("option");
+            o.value=t;o.innerText=t;
+            filterTag.appendChild(o);
+        });
+
+        let plus=document.createElement("span");
+        plus.className="tag-btn";
+        plus.innerText="+";
+        plus.onclick=()=>{
+            let t=prompt("Nama tag");
+            if(!t)return;
+            db.ref("tags/"+t).set(true).then(loadTags);
         };
+        tagList.appendChild(plus);
+    });
+}
 
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const database = firebase.database();
-        const diaryRef = database.ref('diaries');
+function selectTag(t){
+    selectedTag.innerHTML="";
+    let s=document.createElement("span");
+    s.className="tag-btn tag-selected";
+    s.innerText=t;
+    s.onclick=()=>selectedTag.innerHTML="";
+    selectedTag.appendChild(s);
+}
 
-        // Elemen HTML
-        const authSection = document.getElementById('authSection');
-        const mainApp = document.getElementById('mainApp');
-        const googleBtn = document.getElementById('googleBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const userInfo = document.getElementById('userInfo');
-        const welcomeText = document.getElementById('welcomeText');
+/* === DIARY === */
+function saveDiary(){
+    if(!diaryDate.value||!diaryText.value||!selectedTag.innerText){
+        alert("Tanggal, isi, dan tag wajib diisi");
+        return;
+    }
+    db.ref("diaries").push({
+        date:diaryDate.value,
+        text:diaryText.value,
+        tag:selectedTag.innerText
+    }).then(()=>{
+        diaryText.value="";
+        selectedTag.innerHTML="";
+        loadDiary();
+    });
+}
 
-        // Login Google
-        googleBtn.addEventListener('click', () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider);
+function loadDiary(){
+    diaryList.innerHTML="";
+    let q=searchInput.value.toLowerCase();
+    let f=filterTag.value;
+
+    db.ref("diaries").once("value").then(s=>{
+        const d=s.val()||{};
+        Object.entries(d).forEach(([k,x])=>{
+            let sText=(x.date+x.text+x.tag).toLowerCase();
+            if(q && !sText.includes(q))return;
+            if(f && x.tag!==f)return;
+
+            let p=x.text.length>70?x.text.slice(0,70)+"…":x.text;
+            let e=document.createElement("div");
+            e.className="entry";
+            e.innerHTML=`
+              <span class="delete-x" onclick="deleteDiary('${k}')">×</span>
+              <div class="entry-date">${x.date} • ${x.tag}</div>
+              <div class="entry-preview">${p}</div>`;
+            diaryList.appendChild(e);
         });
+    });
+}
 
-        // Logout
-        logoutBtn.addEventListener('click', () => {
-            auth.signOut();
-        });
+function deleteDiary(k){
+    if(confirm("Yakin ingin menghapus diary ini?")){
+        db.ref("diaries/"+k).remove().then(loadDiary);
+    }
+}
 
-        // Cek status login
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                // Sudah login
-                welcomeText.classList.add('hidden');
-                googleBtn.classList.add('hidden');
-                userInfo.classList.remove('hidden');
-                logoutBtn.classList.remove('hidden');
-                mainApp.classList.remove('hidden');
-                userInfo.innerHTML = `Halo, ${user.displayName || user.email}!`;
-                loadDiaries(); // Load data
-            } else {
-                // Belum login
-                authSection.querySelectorAll(':not(#welcomeText)').forEach(el => el.classList.add('hidden'));
-                welcomeText.classList.remove('hidden');
-                googleBtn.classList.remove('hidden');
-                mainApp.classList.add('hidden');
-                document.getElementById('diaryList').innerHTML = '';
-            }
-        });
-
-        // Simpan diary
-        document.getElementById('diaryForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const title = document.getElementById('title').value;
-            const content = document.getElementById('content').value;
-            const tagsInput = document.getElementById('tags').value;
-            const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [];
-
-            diaryRef.push({
-                title,
-                content,
-                tags,
-                timestamp: Date.now(),
-                userId: auth.currentUser.uid // Simpan uid biar lebih aman nanti
-            });
-
-            document.getElementById('diaryForm').reset();
-            alert('Diary tersimpan!');
-        });
-
-        // Load dan tampilkan diary (real-time)
-        function loadDiaries() {
-            diaryRef.orderByChild('timestamp').on('value', (snapshot) => {
-                const diaryList = document.getElementById('diaryList');
-                diaryList.innerHTML = '';
-
-                if (!snapshot.exists()) {
-                    diaryList.innerHTML = '<p>Belum ada diary. Tulis yang pertama!</p>';
-                    return;
-                }
-
-                const entries = [];
-                snapshot.forEach((child) => entries.push({ key: child.key, data: child.val() }));
-                entries.reverse().forEach((entry) => {
-                    const data = entry.data;
-                    const div = document.createElement('div');
-                    div.className = 'entry';
-                    const date = new Date(data.timestamp).toLocaleString('id-ID');
-                    div.innerHTML = `
-                        <h3>${data.title}</h3>
-                        <div class="timestamp">${date}</div>
-                        <p>${data.content.replace(/\n/g, '<br>')}</p>
-                        ${data.tags.length ? `<p class="tags">Tag: ${data.tags.join(', ')}</p>` : ''}
-                        <button class="delete-btn" onclick="deleteEntry('${entry.key}')">Hapus</button>
-                    `;
-                    diaryList.appendChild(div);
-                });
-            });
-        }
-
-        // Hapus
-        function deleteEntry(key) {
-            if (confirm('Yakin hapus diary ini?')) {
-                diaryRef.child(key).remove();
-            }
-        }
-    </script>
+diaryDate.valueAsDate=new Date();
+loadTags();
+loadDiary();
+</script>
 </body>
 </html>
