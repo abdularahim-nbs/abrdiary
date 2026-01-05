@@ -32,6 +32,7 @@ body{
 h1{text-align:center;margin-bottom:6px;}
 .subtitle{text-align:center;color:var(--secondary);margin-bottom:20px;}
 label{ font-size:13px; font-weight:600; }
+
 input, textarea, select{
     width:100%;
     padding:10px 12px;
@@ -41,6 +42,7 @@ input, textarea, select{
     border:1px solid var(--border);
 }
 textarea{ height:120px; }
+
 .btn-primary{
     background:var(--primary);
     color:white;
@@ -49,6 +51,27 @@ textarea{ height:120px; }
     border-radius:999px;
     cursor:pointer;
 }
+
+/* DATE TIME INLINE & PLAIN */
+.datetime-row{
+    display:flex;
+    gap:16px;
+    margin-bottom:14px;
+}
+.datetime-row input{
+    border:none;
+    background:transparent;
+    padding:0;
+    margin:0;
+    font-size:14px;
+    font-weight:600;
+    color:#1f2937;
+    cursor:pointer;
+}
+.datetime-row input:focus{
+    outline:none;
+}
+
 .tag-btn{
     background:#e5f0ff;
     color:#1d4ed8;
@@ -60,7 +83,12 @@ textarea{ height:120px; }
     cursor:pointer;
 }
 .tag-selected{ background:#1d4ed8;color:white; }
-.filter-bar{ display:flex; gap:10px; margin-bottom:12px; }
+
+.filter-bar{
+    display:flex;
+    gap:10px;
+    margin-bottom:12px;
+}
 #diaryList{
     max-height:320px;
     overflow-y:auto;
@@ -76,22 +104,38 @@ textarea{ height:120px; }
     margin-bottom:10px;
     background:#fafafa;
 }
-.entry-date{ font-size:12px;font-weight:600;color:#475569; }
-.entry-preview{ font-size:13px;margin-top:6px; }
+.entry-date{
+    font-size:12px;
+    font-weight:600;
+    color:#475569;
+}
+.entry-preview{
+    font-size:13px;
+    margin-top:6px;
+}
 .delete-x{
-    position:absolute;top:8px;right:10px;
-    font-size:16px;cursor:pointer;color:#94a3b8;
+    position:absolute;
+    top:8px;
+    right:10px;
+    font-size:16px;
+    cursor:pointer;
+    color:#94a3b8;
 }
 .delete-x:hover{ color:#ef4444; }
 
+/* LOGIN */
 #loginScreen{
-    position:fixed;inset:0;
+    position:fixed;
+    inset:0;
     background:var(--bg-main);
-    display:flex;align-items:center;justify-content:center;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     z-index:999;
 }
 .login-box{ max-width:360px;width:100%; }
 
+/* RESPONSIVE */
 @media(max-width:600px){
     body{ padding:14px; }
     .filter-bar{ flex-direction:column; }
@@ -104,7 +148,6 @@ textarea{ height:120px; }
 
 <body>
 
-<!-- LOGIN -->
 <div id="loginScreen">
   <div class="card login-box">
     <h1>🔐 ABRdiary</h1>
@@ -119,11 +162,10 @@ textarea{ height:120px; }
 <h1>📘 ABRdiary</h1>
 <div class="subtitle">Diary Online Abdul Rahim</div>
 
-<label>Tanggal</label>
-<input type="date" id="diaryDate">
-
-<label>Jam</label>
-<input type="time" id="diaryTime">
+<div class="datetime-row">
+  <input type="date" id="diaryDate">
+  <input type="time" id="diaryTime">
+</div>
 
 <label>Tag (wajib, satu)</label>
 <div id="tagList"></div>
