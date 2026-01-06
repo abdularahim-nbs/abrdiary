@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>ABRdiary v.2.4</title>
+<title>ABRdiary v.2.4.1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -87,14 +87,18 @@ h1{text-align:center;margin-bottom:6px}
 .tag-selected{background:#1d4ed8;color:white}
 
 /* SEARCH */
-.search-box{
-  margin-bottom:10px;
+.search-label{
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:6px;
+  display:block;
 }
 .search-box input{
   width:100%;
   padding:10px 12px;
   border-radius:10px;
   border:1px solid var(--border);
+  margin-bottom:12px;
 }
 
 /* LIST */
@@ -159,7 +163,7 @@ h1{text-align:center;margin-bottom:6px}
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="card login-box">
-    <h1>🔐 Diary Online</h1>
+    <h1>🔐 ABRdiary</h1>
     <div class="subtitle">Abdul Rahim</div>
     <input type="password" id="passwordInput" placeholder="Password">
     <button class="btn" onclick="checkLogin()">Masuk</button>
@@ -169,8 +173,8 @@ h1{text-align:center;margin-bottom:6px}
 <div class="container" id="app" style="display:none">
 
 <div class="card">
-  <h1>📘 Diary Online</h1>
-  <div class="subtitle">Abdul Rahim</div>
+  <h1>📘 ABRdiary</h1>
+  <div class="subtitle">Diary Online Abdul Rahim</div>
 
   <div class="datetime-row">
     <input type="date" id="diaryDate">
@@ -188,9 +192,10 @@ h1{text-align:center;margin-bottom:6px}
 <div class="card">
   <h3>📚 Daftar Diary</h3>
 
-  <!-- 🔍 SEARCH KEMBALI -->
+  <!-- 🔍 SEARCH (PASTI MUNCUL) -->
+  <label class="search-label">Cari Diary</label>
   <div class="search-box">
-    <input type="text" id="searchInput" placeholder="🔍 Cari diary..." onkeyup="loadDiary()">
+    <input type="text" id="searchInput" placeholder="Ketik kata kunci..." onkeyup="loadDiary()">
   </div>
 
   <div id="diaryList"></div>
@@ -222,12 +227,15 @@ firebase.initializeApp({
 });
 const db=firebase.database();
 
-/* DATE TIME AUTO */
+/* DATE & TIME AUTO */
+let manualDate=false, manualTime=false;
 setInterval(()=>{
   const n=new Date();
-  diaryDate.value=n.toISOString().slice(0,10);
-  diaryTime.value=n.toTimeString().slice(0,5);
+  if(!manualDate) diaryDate.value=n.toISOString().slice(0,10);
+  if(!manualTime) diaryTime.value=n.toTimeString().slice(0,5);
 },1000);
+diaryDate.onchange=()=>manualDate=true;
+diaryTime.onchange=()=>manualTime=true;
 
 /* TAG */
 function loadTags(){
@@ -245,7 +253,8 @@ function loadTags(){
 
 /* SAVE */
 function saveDiary(){
-  if(!selectedTag.innerText||!diaryText.value) return alert("Tag & isi wajib");
+  if(!selectedTag.innerText||!diaryText.value)
+    return alert("Tag dan isi diary wajib diisi");
   db.ref("diaries").push({
     date:diaryDate.value,
     time:diaryTime.value,
@@ -266,16 +275,24 @@ function loadDiary(){
       if(q && !(x.text+x.tag).toLowerCase().includes(q)) return;
       let d=document.createElement("div");
       d.className="entry";
-      d.innerHTML=`<div class="entry-date">${x.date} ${x.time} • ${x.tag}</div>
-      <div class="entry-preview">${x.text.slice(0,60)}…</div>`;
-      d.onclick=()=>{currentKey=x.key;modalContent.innerHTML=`<b>${x.date} ${x.time}</b><hr>${x.text}`;modal.style.display="flex"};
+      d.innerHTML=`
+        <div class="entry-date">${x.date} ${x.time} • ${x.tag}</div>
+        <div class="entry-preview">${x.text.slice(0,60)}…</div>`;
+      d.onclick=()=>{
+        currentKey=x.key;
+        modalContent.innerHTML=`<b>${x.date} ${x.time}</b><hr>${x.text}`;
+        modal.style.display="flex";
+      };
       diaryList.appendChild(d);
     });
   });
 }
 function deleteCurrent(){
-  if(confirm("Hapus diary?")){
-    db.ref("diaries/"+currentKey).remove().then(()=>{modal.style.display="none";loadDiary()});
+  if(confirm("Yakin ingin menghapus diary ini?")){
+    db.ref("diaries/"+currentKey).remove().then(()=>{
+      modal.style.display="none";
+      loadDiary();
+    });
   }
 }
 
